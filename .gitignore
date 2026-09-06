@@ -6,6 +6,7 @@
 Thumbs.db
 
 # Local assistant and browser-test artifacts
+.workbuddy-ai/
 .playwright-cli/
 **/.playwright-cli/
 output/
