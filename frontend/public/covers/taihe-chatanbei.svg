@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">槎滩陂主题封面</title>
+  <desc id="desc">古代低坝与灌溉水渠的抽象插画</desc>
+  <rect width="1200" height="760" fill="#d9d1bc"/>
+  <path d="M0 95h1200v174H0z" fill="#8ca69c"/>
+  <path d="M0 265c146-31 277-27 418 8 134 33 252 37 382-5 147-48 263-48 400-10v194c-132-37-255-38-389 9-141 50-276 44-414 9-138-36-259-37-397-4Z" fill="#6b8b82"/>
+  <path d="M0 548c146-28 279-22 404 11 141 38 281 33 422-13 146-48 252-50 374-21v235H0Z" fill="#afbb8d"/>
+  <path d="M90 496h1020v86H90z" fill="#75674d"/>
+  <path d="M90 496c142-26 278-26 421 0 156 28 279 29 438-3 33-7 84-9 161-1v44c-92-8-135-4-168 3-166 34-306 33-454 3-142-29-273-29-398-5Z" fill="#c8ad76"/>
+  <path d="M0 645c171-43 294-47 456-3 162 43 289 35 437-8 116-34 213-36 307-16v142H0Z" fill="#52665d"/>
+  <path d="M174 390h170v106H174zM397 416h146v80H397zM590 386h205v110H590zM846 419h155v77H846z" fill="#514b3d"/>
+  <path d="M130 112h298" stroke="#101110" stroke-width="3" opacity=".38"/>
+  <text x="130" y="91" fill="#101110" font-family="serif" font-size="28" letter-spacing="6">CHISLED WATER / 937</text>
+</svg>

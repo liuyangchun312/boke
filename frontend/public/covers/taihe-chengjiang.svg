@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">澄江镇主题封面</title>
+  <desc id="desc">县城街巷、早市与江堤晚风的抽象插画</desc>
+  <rect width="1200" height="760" fill="#e7d5bd"/>
+  <circle cx="927" cy="138" r="91" fill="#da8267"/>
+  <path d="M0 459h1200v301H0z" fill="#b6ad91"/>
+  <path d="M0 457h1200v86H0z" fill="#80958d"/>
+  <path d="M0 542h1200v218H0z" fill="#606f66"/>
+  <path d="M131 382h142v75H131zM296 331h185v126H296zM516 365h136v92H516zM687 299h227v158H687zM941 348h127v109H941z" fill="#544d46"/>
+  <path d="M0 596c188-31 330-29 488 12 153 39 277 33 423-10 114-33 197-38 289-25v65c-104-13-184-3-277 23-162 46-302 49-463 8-160-40-301-43-460-12Z" fill="#d4ba84"/>
+  <path d="M110 121h282" stroke="#101110" stroke-width="3" opacity=".38"/>
+  <text x="110" y="101" fill="#101110" font-family="serif" font-size="28" letter-spacing="6">CHENGJIANG / DAILY NOTES</text>
+</svg>

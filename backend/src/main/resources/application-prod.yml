@@ -1,0 +1,19 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+server:
+  address: ${BLOG_SERVER_ADDRESS:127.0.0.1}
+
+blog:
+  jwt:
+    secret: ${BLOG_JWT_SECRET:}
+    expiration-minutes: ${BLOG_JWT_EXPIRATION_MINUTES:60}
+  bootstrap:
+    username: ${BLOG_ADMIN_USERNAME:}
+    password: ${BLOG_ADMIN_PASSWORD:}
+    display-name: ${BLOG_ADMIN_DISPLAY_NAME:}
+    role: ADMIN
+  production:
+    allow-durable-datasource: ${BLOG_ALLOW_DURABLE_DATASOURCE:false}

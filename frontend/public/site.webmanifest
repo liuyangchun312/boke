@@ -1,0 +1,13 @@
+{
+  "name": "刘杨春的泰和乡土手记",
+  "short_name": "泰和手记",
+  "description": "记录江西省吉安市泰和县的风物、人文与日常。",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#101110",
+  "theme_color": "#101110",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

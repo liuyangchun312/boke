@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">快阁主题封面</title>
+  <desc id="desc">快阁楼台与澄江月色的抽象人文插画</desc>
+  <rect width="1200" height="760" fill="#202b2a"/>
+  <circle cx="916" cy="156" r="94" fill="#e3c789"/>
+  <path d="M0 359c180-53 344-57 512-5 159 48 284 47 432-2 91-30 168-38 256-28v436H0Z" fill="#334945"/>
+  <path d="M0 552c163-43 292-43 446-4 157 40 290 42 453-6 117-34 207-39 301-26v244H0Z" fill="#596e62"/>
+  <path d="M377 513h446v41H377zM441 513V353h318v160H441zM390 350h420l-47-49H437Zm88-96h244v46H478z" fill="#c57b62"/>
+  <path d="M466 413h79v100h-79zM573 413h74v100h-74zM678 413h80v100h-80z" fill="#273331"/>
+  <path d="M94 112h264" stroke="#e3c789" stroke-width="3" opacity=".55"/>
+  <text x="94" y="92" fill="#f1ece1" font-family="serif" font-size="28" letter-spacing="6">KUAIGE / HUANG TINGJIAN</text>
+</svg>

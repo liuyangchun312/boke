@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">泰和乌鸡主题封面</title>
+  <desc id="desc">白羽与乌骨的抽象地方物产插画</desc>
+  <rect width="1200" height="760" fill="#e9dfcf"/>
+  <circle cx="1000" cy="150" r="94" fill="#c65346"/>
+  <path d="M0 620C170 560 300 594 440 540s280-58 424-5 222 50 336 3v222H0Z" fill="#a6ad91"/>
+  <path d="M0 694c170-54 294-18 454-38 180-22 300-96 448-44 127 44 197 64 298 16v132H0Z" fill="#68725d"/>
+  <path d="M238 514c-28-84 6-204 96-251 64-33 145-19 185 31 37 47 17 120-31 163-59 54-143 88-250 57Z" fill="#242422"/>
+  <path d="M335 278c-30-89 24-171 105-177 74-6 141 48 139 115-2 56-53 91-102 91-40 0-98-9-142-29Z" fill="#f6f1e8"/>
+  <path d="M430 172c24 26 32 53 22 83-11 35-36 57-74 66 25-36 26-68 3-96 23-31 39-48 49-53Z" fill="#d9cbb6"/>
+  <path d="m507 466 92 31-67 38-97-27Z" fill="#cfa96a"/>
+  <path d="m615 497 39-4 48 18-45 20Z" fill="#cfa96a"/>
+  <path d="M120 130h290" stroke="#101110" stroke-width="3" opacity=".38"/>
+  <path d="M120 147h158" stroke="#101110" stroke-width="3" opacity=".18"/>
+  <text x="120" y="105" fill="#101110" font-family="serif" font-size="28" letter-spacing="6">TAIHE / WUSHAN</text>
+</svg>
