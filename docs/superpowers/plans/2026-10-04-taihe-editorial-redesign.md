@@ -20,5 +20,5 @@ Motion uses brief entry and intersection reveals plus image and arrow hover feed
 - [x] Unify article, archive and author pages with the new visual system; implement responsive states and accessible motion.
 - [x] Run frontend and Cloudflare tests, production build and browser checks of navigation, search, filters, article reading, menu and failure states.
 - [x] Inspect desktop and mobile screenshots; correct typography, spacing, contrast, motion and interaction issues until the audit has no obvious outstanding defect.
-- [ ] Commit only task files, push main without force, publish to the existing Cloudflare project, and verify the live deployment and API.
-- [ ] Copy the verified task files to D:/boke while preserving other local work, and record the final audit evidence.
+- [x] Commit only task files, push main without force, publish to the existing Cloudflare project, and verify the live deployment and API.
+- [x] Copy the verified task files to D:/boke while preserving other local work, and record the final audit evidence.
