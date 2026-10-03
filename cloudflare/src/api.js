@@ -8,6 +8,9 @@ const reply = (data, status = 200, message = 'OK') => Response.json({ success: s
   status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }
 })
 const postView = row => row ? { ...row, tags: JSON.parse(row.tags) } : null
+const postColumns = `posts.*,
+  (SELECT count(*) FROM post_likes WHERE postId=posts.id) AS likeCount,
+  (SELECT count(*) FROM comments WHERE postId=posts.id AND status='APPROVED') AS commentCount`
 const required = (value, name, max) => {
   if (typeof value !== 'string' || !value.trim() || value.length > max) fail(400, `Invalid ${name}`)
   return value.trim()
@@ -46,7 +49,7 @@ async function rateLimit(request, env, scope, max) {
   if (result.hits > max) fail(429, 'Too many requests. Please try again later.')
 }
 async function findPost(db, field, value, published = false) {
-  const row = await db.prepare(`SELECT * FROM posts WHERE ${field} = ?${published ? " AND status = 'PUBLISHED'" : ''}`).bind(value).first()
+  const row = await db.prepare(`SELECT ${postColumns} FROM posts WHERE ${field} = ?${published ? " AND status = 'PUBLISHED'" : ''}`).bind(value).first()
   if (!row) fail(404, 'Post not found')
   return postView(row)
 }
@@ -67,7 +70,7 @@ async function listPosts(db, url, admin) {
   const where = filters.length ? ` WHERE ${filters.join(' AND ')}` : ''
   const results = await db.batch([
     db.prepare(`SELECT count(*) AS total FROM posts${where}`).bind(...args),
-    db.prepare(`SELECT * FROM posts${where} ORDER BY createdAt DESC, id DESC LIMIT ? OFFSET ?`).bind(...args, size, (page - 1) * size)
+    db.prepare(`SELECT ${postColumns} FROM posts${where} ORDER BY createdAt DESC, id DESC LIMIT ? OFFSET ?`).bind(...args, size, (page - 1) * size)
   ])
   const total = results[0].results[0].total
   return { items: results[1].results.map(postView), page, size, total, totalPages: Math.ceil(total / size) }
@@ -100,11 +103,26 @@ async function savePost(db, input, existing = null) {
       ? await db.prepare('UPDATE posts SET title=?, slug=?, excerpt=?, content=?, category=?, tags=?, coverImage=?, status=?, updatedAt=?, publishedAt=? WHERE id=? RETURNING *').bind(...args, existing.id).first()
       : await db.prepare('INSERT INTO posts(title,slug,excerpt,content,category,tags,coverImage,status,updatedAt,publishedAt,createdAt) VALUES (?,?,?,?,?,?,?,?,?,?,?) RETURNING *').bind(...args, now).first()
     if (!row) fail(404, 'Post not found')
-    return postView(row)
+    return await findPost(db, 'id', row.id)
   } catch (error) {
     if (/UNIQUE constraint/i.test(error.message)) fail(409, 'Slug already exists. Please retry.')
     throw error
   }
+}
+function visitorId(request) {
+  const value = request.headers.get('X-Visitor-Id')
+  if (!value || !/^[A-Za-z0-9_-]{16,128}$/.test(value)) fail(400, 'Invalid visitor identity')
+  return value
+}
+function likeQuery(db, id, visitor) {
+  return db.prepare(`SELECT
+    (SELECT count(*) FROM post_likes WHERE postId=posts.id) AS likeCount,
+    EXISTS (SELECT 1 FROM post_likes WHERE postId=posts.id AND visitorId=?) AS liked
+    FROM posts WHERE id=? AND status='PUBLISHED'`).bind(visitor, id)
+}
+function likeView(row) {
+  if (!row) fail(404, 'Post not found')
+  return { likeCount: row.likeCount, liked: Boolean(row.liked) }
 }
 export async function handleApi(request, env) {
   try {
@@ -141,40 +159,77 @@ export async function handleApi(request, env) {
         : "SELECT DISTINCT json_each.value AS value FROM posts, json_each(posts.tags) WHERE status='PUBLISHED' ORDER BY value COLLATE NOCASE"
       return reply((await db.prepare(sql).all()).results.map(row => row.value))
     }
-    let match = path.match(/^\/api\/admin\/posts\/(\d+)(?:\/(publish|unpublish))?$/)
+    let match = path.match(/^\/api\/admin\/posts\/(\d+)(?:\/(publish|unpublish|likes))?$/)
     if (match) {
       const post = await findPost(db, 'id', Number(match[1]))
       if (!match[2]) {
         if (method === 'GET') return reply(post)
         if (method === 'PUT') return reply(await savePost(db, await body(request), post))
         if (method === 'DELETE') { await db.prepare('DELETE FROM posts WHERE id=?').bind(post.id).run(); return reply(null) }
-      } else if (method === 'PATCH') {
+      } else if (match[2] === 'likes' && method === 'DELETE') {
+        await db.prepare('DELETE FROM post_likes WHERE postId=?').bind(post.id).run()
+        return reply(null)
+      } else if (['publish', 'unpublish'].includes(match[2]) && method === 'PATCH') {
         const published = match[2] === 'publish'; const now = new Date().toISOString()
-        return reply(postView(await db.prepare('UPDATE posts SET status=?, publishedAt=?, updatedAt=? WHERE id=? RETURNING *')
-          .bind(published ? 'PUBLISHED' : 'DRAFT', published ? post.publishedAt || now : null, now, post.id).first()))
+        await db.prepare('UPDATE posts SET status=?, publishedAt=?, updatedAt=? WHERE id=?')
+          .bind(published ? 'PUBLISHED' : 'DRAFT', published ? post.publishedAt || now : null, now, post.id).run()
+        return reply(await findPost(db, 'id', post.id))
       }
+    }
+    match = path.match(/^\/api\/posts\/(\d+)\/likes$/)
+    if (match && ['GET', 'PUT'].includes(method)) {
+      const id = Number(match[1]); const visitor = visitorId(request)
+      if (method === 'GET') return reply(likeView(await likeQuery(db, id, visitor).first()))
+      const input = await body(request)
+      if (typeof input.liked !== 'boolean') fail(400, 'Invalid liked value')
+      const change = input.liked
+        ? db.prepare("INSERT INTO post_likes(postId,visitorId,createdAt) SELECT id,?,? FROM posts WHERE id=? AND status='PUBLISHED' ON CONFLICT(postId,visitorId) DO NOTHING")
+          .bind(visitor, new Date().toISOString(), id)
+        : db.prepare("DELETE FROM post_likes WHERE postId=? AND visitorId=? AND EXISTS (SELECT 1 FROM posts WHERE id=? AND status='PUBLISHED')")
+          .bind(id, visitor, id)
+      const results = await db.batch([change, likeQuery(db, id, visitor)])
+      return reply(likeView(results[1].results[0]))
     }
     match = path.match(/^\/api\/posts\/(\d+)\/comments$/)
     if (match) {
       const id = Number(match[1])
       await findPost(db, 'id', id, true)
-      if (method === 'GET') return reply((await db.prepare('SELECT * FROM comments WHERE postId=? ORDER BY createdAt DESC, id DESC').bind(id).all()).results)
+      if (method === 'GET') return reply((await db.prepare("SELECT * FROM comments WHERE postId=? AND status='APPROVED' ORDER BY createdAt DESC, id DESC").bind(id).all()).results)
       if (method === 'POST') {
         await rateLimit(request, env, 'comment', 3)
         const input = await body(request)
         const author = required(input.author, 'author', 40); const content = required(input.content, 'content', 1000)
-        const row = await db.prepare("INSERT INTO comments(postId,author,content,createdAt) SELECT id,?,?,? FROM posts WHERE id=? AND status='PUBLISHED' RETURNING *")
+        const row = await db.prepare("INSERT INTO comments(postId,author,content,createdAt,status) SELECT id,?,?,?,'PENDING' FROM posts WHERE id=? AND status='PUBLISHED' RETURNING *")
           .bind(author, content, new Date().toISOString(), id).first()
         if (!row) fail(404, 'Post not found')
         return reply(row, 201)
       }
     }
     if (path === '/api/admin/comments' && method === 'GET') return reply((await db.prepare('SELECT * FROM comments ORDER BY createdAt DESC, id DESC').all()).results)
-    match = path.match(/^\/api\/admin\/comments\/(\d+)$/)
-    if (match && method === 'DELETE') {
-      const row = await db.prepare('DELETE FROM comments WHERE id=? RETURNING id').bind(Number(match[1])).first()
-      if (!row) fail(404, 'Comment not found')
-      return reply(null)
+    match = path.match(/^\/api\/admin\/comments\/(\d+)(?:\/(status|reply))?$/)
+    if (match) {
+      const id = Number(match[1])
+      if (!match[2] && method === 'DELETE') {
+        const row = await db.prepare('DELETE FROM comments WHERE id=? RETURNING id').bind(id).first()
+        if (!row) fail(404, 'Comment not found')
+        return reply(null)
+      }
+      if (match[2] === 'status' && method === 'PATCH') {
+        const input = await body(request)
+        if (!['PENDING', 'APPROVED', 'HIDDEN'].includes(input.status)) fail(400, 'Invalid comment status')
+        const row = await db.prepare('UPDATE comments SET status=? WHERE id=? RETURNING *').bind(input.status, id).first()
+        if (!row) fail(404, 'Comment not found')
+        return reply(row)
+      }
+      if (match[2] === 'reply' && method === 'PUT') {
+        const input = await body(request)
+        if (typeof input.content !== 'string' || input.content.length > 1000) fail(400, 'Invalid reply content')
+        const content = input.content.trim() || null
+        const row = await db.prepare('UPDATE comments SET reply=?, repliedAt=? WHERE id=? RETURNING *')
+          .bind(content, content ? new Date().toISOString() : null, id).first()
+        if (!row) fail(404, 'Comment not found')
+        return reply(row)
+      }
     }
     match = path.match(/^\/api\/posts\/(?:slug\/([^/]+)|([^/]+))$/)
     if (match && method === 'GET') {
@@ -182,7 +237,7 @@ export async function handleApi(request, env) {
       const field = !match[1] && /^\d+$/.test(value) ? 'id' : 'slug'
       const row = await db.prepare(`UPDATE posts SET viewCount=viewCount+1 WHERE ${field}=? AND status='PUBLISHED' RETURNING *`).bind(field === 'id' ? Number(value) : value).first()
       if (!row) fail(404, 'Post not found')
-      return reply(postView(row))
+      return reply(await findPost(db, 'id', row.id, true))
     }
     fail(404, 'API route not found')
   } catch (error) {

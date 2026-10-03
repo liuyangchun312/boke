@@ -1,5 +1,6 @@
 import test, { beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
+import * as api from './api.js'
 import { createComment, deleteComment, fetchAdminComments, fetchComments, fetchPosts, fetchAllPosts, fetchPost, fetchAdminPosts, fetchCurrentUser, publishPost, unpublishPost, setToken, getToken } from './api.js'
 
 const storage = new Map()
@@ -108,4 +109,51 @@ test('a canceled session verification forwards cancellation to the network reque
   controller.abort()
   assert.equal(requestSignal.aborted, true)
   await pending
+})
+
+test('likes keep a stable visitor identity and never send the administrator token', async () => {
+  setToken('private-admin-token')
+  const calls = []
+  globalThis.fetch = async (url, options) => { calls.push({ url, options }); return ok({ likeCount: 1, liked: true }) }
+  await api.fetchLikes(7)
+  await api.setPostLike(7, true)
+  const visitor = calls[0].options.headers.get('X-Visitor-Id')
+  assert.match(visitor, /^[A-Za-z0-9_-]{16,128}$/)
+  assert.equal(calls[1].options.headers.get('X-Visitor-Id'), visitor)
+  assert.equal(calls[0].options.headers.has('Authorization'), false)
+  assert.equal(calls[1].options.headers.has('Authorization'), false)
+  assert.equal(calls[1].url, '/api/posts/7/likes')
+  assert.equal(calls[1].options.method, 'PUT')
+  assert.deepEqual(JSON.parse(calls[1].options.body), { liked: true })
+  await api.setPostLike(7, false)
+  assert.deepEqual(JSON.parse(calls[2].options.body), { liked: false })
+})
+
+test('moderation, replies and resetting likes authenticate with their API contracts', async () => {
+  setToken('private-admin-token')
+  const calls = []
+  globalThis.fetch = async (url, options) => { calls.push({ url, options }); return ok({}) }
+  await api.moderateComment(9, 'APPROVED')
+  await api.replyToComment(9, '谢谢你的留言')
+  await api.resetPostLikes(7)
+  assert.deepEqual(calls.map(({ url, options }) => [url, options.method]), [
+    ['/api/admin/comments/9/status', 'PATCH'],
+    ['/api/admin/comments/9/reply', 'PUT'],
+    ['/api/admin/posts/7/likes', 'DELETE']
+  ])
+  for (const { options } of calls) assert.equal(options.headers.get('Authorization'), 'Bearer private-admin-token')
+  assert.deepEqual(JSON.parse(calls[0].options.body), { status: 'APPROVED' })
+  assert.deepEqual(JSON.parse(calls[1].options.body), { content: '谢谢你的留言' })
+})
+
+test('likes work where randomUUID is unavailable, including HTTP previews', async () => {
+  const randomUUID = globalThis.crypto.randomUUID
+  globalThis.crypto.randomUUID = undefined
+  try {
+    const compatibilityApi = await import('./api.js?compatibility-test')
+    let visitor
+    globalThis.fetch = async (url, options) => { visitor = options.headers.get('X-Visitor-Id'); return ok({ liked: false, likeCount: 0 }) }
+    await compatibilityApi.fetchLikes(7)
+    assert.match(visitor, /^[A-Za-z0-9_-]{16,128}$/)
+  } finally { globalThis.crypto.randomUUID = randomUUID }
 })

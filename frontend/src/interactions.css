@@ -1,0 +1,82 @@
+.article-reactions { padding-top: 24px; padding-bottom: 32px; border-bottom: 1px solid var(--paper-line); }
+.reaction-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 28px; }
+.like-button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-width: 138px; height: 46px; padding: 0 18px; border: 1px solid #bec8c0; border-radius: 4px; background: transparent; color: #375743; font-size: 14px; transition: background 160ms, color 160ms; }
+.like-button:hover { background: #e8eee7; }
+.like-button.is-liked { color: #a04439; border-color: #a04439; background: #faeeeb; }
+.like-button strong { min-width: 20px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.like-button:disabled { opacity: .65; cursor: default; }
+.reaction-comment-link { display: inline-flex; align-items: center; gap: 8px; color: #496c52; font-size: 14px; }
+.reaction-error { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; color: #a04439; font-size: 13px; }
+.story-interactions { gap: 12px !important; }
+.story-interactions > span { gap: 4px; font-variant-numeric: tabular-nums; }
+.comment-item > div:last-child { min-width: 0; width: 100%; }
+.comment-item header { flex-wrap: wrap; }
+.comment-item header strong, .admin-comment-copy header strong { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.author-reply { margin-top: 16px; padding: 12px 0 0 16px; border-left: 2px solid #9bab99; }
+.author-reply header strong { display: inline-flex; align-items: center; gap: 6px; color: #496c52; }
+.author-reply header strong span { font: 11px var(--sans); }
+.author-reply p { margin-bottom: 0; }
+.admin-search { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 0 10px; height: 36px; border: 1px solid var(--paper-line); border-radius: 3px; color: #6b7469; }
+.admin-search input { width: 100%; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; color: var(--ink); font-size: 12px; }
+.admin-search:focus-within { outline: 2px solid #718a78; outline-offset: 2px; }
+.panel-actions .admin-search { max-width: 200px; }
+.row-title > div:last-child { min-width: 0; }
+.row-title small.row-interactions { display: flex; align-items: center; gap: 15px; margin-top: 8px; font-size: 11px; }
+.row-interactions span { display: inline-flex; align-items: center; gap: 5px; font-variant-numeric: tabular-nums; }
+.article-table-head, .article-row { grid-template-columns: minmax(190px, 1fr) 92px 76px 92px 132px; gap: 12px; }
+.row-actions .icon-button { width: 30px; height: 32px; flex: 0 0 30px; }
+.comment-manager-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 20px; }
+.comment-manager-filters .admin-search { flex: 1 1 220px; }
+.comment-manager-filters select { max-width: 220px; min-width: 110px; height: 36px; padding: 0 26px 0 10px; border: 1px solid var(--paper-line); border-radius: 3px; background: transparent; color: var(--ink); font-size: 12px; }
+.filtered-count { color: #737c71; font-size: 12px; white-space: nowrap; }
+.admin-comment-row.managed-comment { grid-template-columns: 38px minmax(0, 1fr) 136px; gap: 14px; }
+.managed-comment header { flex-wrap: wrap; align-items: center; }
+.comment-status { flex: 0 0 auto; padding: 2px 7px; border-radius: 3px; font-size: 11px; color: #53664e; background: #e6ede1; }
+.comment-status.status-pending { color: #85591b; background: #fbefcf; }
+.comment-status.status-hidden { color: #68707a; background: #e9ebee; }
+.comment-moderation-actions { display: flex; justify-content: flex-end; gap: 2px; }
+.comment-moderation-actions .icon-button { width: 32px; height: 34px; }
+.comment-moderation-actions .approve { color: #4a7554; }
+.admin-saved-reply { margin: 15px 0 0; padding-left: 14px; border-left: 2px solid #97aa92; }
+.admin-saved-reply > strong { display: flex; align-items: center; gap: 7px; font-size: 12px; }
+.admin-reply-form { margin: 16px 0 0; }
+.admin-reply-form label { display: block; margin-bottom: 8px; color: #576350; font-size: 12px; }
+.admin-reply-form textarea { display: block; resize: vertical; min-height: 90px; width: 100%; padding: 10px; border: 1px solid #bbc7b5; border-radius: 3px; background: transparent; color: var(--ink); font: 13px/1.7 var(--sans); }
+.admin-reply-form > div { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.admin-reply-form > div > span { margin-right: auto; color: #798372; font-size: 11px; }
+.admin-reply-form .compact { min-height: 34px; height: auto; padding: 8px 12px; font-size: 12px; }
+
+@media (max-width: 1200px) {
+  .article-table-head, .article-row { grid-template-columns: minmax(160px, 1fr) 74px 70px 132px; }
+  .article-table-head > span:nth-child(4), .article-row .row-date { display: none; }
+  .panel-heading { flex-wrap: wrap; gap: 16px; }
+  .panel-actions { flex-wrap: wrap; }
+}
+@media (max-width: 760px) {
+  .article-table-head { display: none; }
+  .article-row { grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 16px 0; }
+  .article-row .row-title { grid-column: 1 / -1; grid-row: 1; }
+  .row-title strong { white-space: normal; overflow-wrap: anywhere; line-height: 1.6; }
+  .article-row .row-category { display: none; }
+  .article-row .status-dot { grid-column: 1; grid-row: 2; align-self: center; margin-top: 0; }
+  .article-row .row-actions { grid-column: 2; grid-row: 2; }
+  .row-actions .icon-button { width: 34px; height: 36px; flex-basis: 34px; }
+  .panel-actions { width: 100%; gap: 8px; }
+  .panel-actions .admin-search { max-width: none; width: 100%; flex: 1 1 100%; }
+  .panel-actions select { max-width: 100%; flex: 1 1 100px; }
+  .comment-manager-filters { gap: 8px; }
+  .comment-manager-filters .admin-search { flex-basis: 100%; }
+  .comment-manager-filters select { max-width: 100%; flex: 1 1 100px; width: 0; }
+  .admin-comment-row.managed-comment { grid-template-columns: 32px minmax(0, 1fr); gap: 10px; }
+  .managed-comment .comment-moderation-actions { grid-column: 2; justify-content: flex-start; margin-top: 4px; }
+  .managed-comment header { flex-direction: row; gap: 8px; }
+  .managed-comment header time { flex-basis: 100%; }
+  .story-interactions { gap: 7px !important; }
+  .story-card--compact .story-footer { flex-wrap: wrap; row-gap: 8px; }
+  .article-reactions { padding-top: 20px; padding-bottom: 24px; }
+}
+@media (max-width: 360px) {
+  body { min-width: 0; }
+  .admin-topbar { flex-wrap: wrap; gap: 14px; }
+  .admin-top-actions { margin-left: auto; }
+}

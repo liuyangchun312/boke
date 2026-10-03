@@ -8,6 +8,9 @@ public class Comment {
     private String author;
     private String content;
     private Instant createdAt;
+    private CommentStatus status = CommentStatus.APPROVED;
+    private String reply;
+    private Instant repliedAt;
 
     public Comment() {
     }
@@ -25,4 +28,10 @@ public class Comment {
     public String getAuthor() { return author; }
     public String getContent() { return content; }
     public Instant getCreatedAt() { return createdAt; }
+    public CommentStatus getStatus() { return status; }
+    public void setStatus(CommentStatus status) { this.status = status; }
+    public String getReply() { return reply; }
+    public void setReply(String reply) { this.reply = reply; }
+    public Instant getRepliedAt() { return repliedAt; }
+    public void setRepliedAt(Instant repliedAt) { this.repliedAt = repliedAt; }
 }

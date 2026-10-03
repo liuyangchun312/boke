@@ -2,30 +2,57 @@ package com.example.blog.seed;
 
 import com.example.blog.auth.service.UserService;
 import com.example.blog.post.dto.PostRequest;
+import com.example.blog.post.model.Post;
 import com.example.blog.post.model.PostStatus;
+import com.example.blog.post.repository.PostRepository;
 import com.example.blog.post.service.PostService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 
 @Component
 @Profile("dev")
 public class DataSeeder implements CommandLineRunner {
+    private static final String RELATED_ARTICLES_SEED = "related-articles-2026-10-v1";
     private final UserService userService;
     private final PostService postService;
+    private final PostRepository postRepository;
+    private final JdbcTemplate jdbc;
+    private final ObjectMapper objectMapper;
+    private final TransactionTemplate transactions;
 
-    public DataSeeder(UserService userService, PostService postService) {
+    public DataSeeder(UserService userService, PostService postService, PostRepository postRepository,
+                      JdbcTemplate jdbc, ObjectMapper objectMapper, PlatformTransactionManager transactionManager) {
         this.userService = userService;
         this.postService = postService;
+        this.postRepository = postRepository;
+        this.jdbc = jdbc;
+        this.objectMapper = objectMapper;
+        this.transactions = new TransactionTemplate(transactionManager);
     }
 
     @Override
-    public void run(String... args) {
+    public void run(String... args) throws IOException {
         userService.createIfAbsent("admin", "admin123", "刘杨春", "ADMIN");
-        if (postService.search(1, 1, null, null, null, false).total() > 0) return;
+        if (postService.search(1, 1, null, null, null, false).total() == 0) {
+            seedOriginalPosts();
+        }
+        seedRelatedArticles();
+    }
 
+    private void seedOriginalPosts() {
         seedPost(
                 "白羽之下，武山脚下的乌鸡",
                 "taihe-black-bone-chicken-wushan",
@@ -67,6 +94,50 @@ public class DataSeeder implements CommandLineRunner {
                 "/covers/taihe-kuaige.svg",
                 "# 快阁晚晴\n\n快阁始建于唐乾符元年（874），初名“慈氏阁”，宋初改称“快阁”。黄庭坚任吉州太和县知县时，曾登临此处并写下《登快阁》：“落木千山天远大，澄江一道月分明。”几句诗把高远的秋意、开阔的江天和人的心绪放在同一幅画面里。\n\n今天再读这首诗，最有意思的并不是把古迹想象成一处凝固的布景，而是去想象当时的县城与江水：木叶落下，远山显出轮廓，澄江在月色里延伸。地名和时代会变化，诗句捕捉到的观看方式却仍然可以被重新打开。\n\n谈快阁，也要把史实和传说分开。快阁的历史沿革、黄庭坚的任职与诗作有明确记载；至于后世附会的故事，则更适合保留为地方记忆。对泰和而言，快阁最珍贵的地方，正在于它让一座县城同时拥有建筑的时间感与文学的回声。");
     }
+
+    private void seedRelatedArticles() throws IOException {
+        List<SeedArticle> articles;
+        try (var input = new ClassPathResource("seed/related-articles.json").getInputStream()) {
+            articles = objectMapper.readValue(input, new TypeReference<>() {});
+        }
+        jdbc.execute("""
+                CREATE TABLE IF NOT EXISTS blog_seed_runs (
+                    seed_key VARCHAR(100) PRIMARY KEY,
+                    applied_at TIMESTAMP(6) NOT NULL
+                )
+                """);
+        transactions.executeWithoutResult(transaction -> {
+            if (jdbc.queryForObject("SELECT COUNT(*) FROM blog_seed_runs WHERE seed_key = ?",
+                    Integer.class, RELATED_ARTICLES_SEED) > 0) return;
+            // The marker and all articles commit together; deleted or renamed articles stay that way on restart.
+            try {
+                jdbc.update("INSERT INTO blog_seed_runs (seed_key, applied_at) VALUES (?, ?)",
+                        RELATED_ARTICLES_SEED, Timestamp.from(Instant.now()));
+            } catch (DuplicateKeyException alreadyImported) {
+                return;
+            }
+            for (SeedArticle article : articles) {
+                if (postRepository.findBySlug(article.slug()).isPresent()) continue;
+                Post post = new Post();
+                post.setTitle(article.title());
+                post.setSlug(article.slug());
+                post.setCategory(article.category());
+                post.setTags(article.tags());
+                post.setExcerpt(article.excerpt());
+                post.setCoverImage(article.coverImage());
+                post.setContent(article.content());
+                post.setStatus(article.status());
+                post.setCreatedAt(article.createdAt());
+                post.setUpdatedAt(article.updatedAt());
+                post.setPublishedAt(article.publishedAt());
+                postRepository.save(post);
+            }
+        });
+    }
+
+    private record SeedArticle(String title, String slug, String category, List<String> tags,
+                               String excerpt, String coverImage, String content, PostStatus status,
+                               Instant createdAt, Instant updatedAt, Instant publishedAt) {}
 
     private void seedPost(String title, String slug, String category, List<String> tags,
                           String excerpt, String coverImage, String content) {

@@ -1,0 +1,27 @@
+/* Rural editorial theme: visual-only, preserves Vue data and interactions. */
+.app-shell:not(.is-admin) { --ink:#293b37; --green:#496c52; --green-dark:#34533d; --paper:#f7f8f4; --line:#dce2da; background:var(--paper); color:var(--ink); }
+.app-shell:not(.is-admin) .site-header { background:transparent; border-bottom:1px solid var(--line); box-shadow:none; }
+.app-shell:not(.is-admin) .brand-title, .app-shell:not(.is-admin) h1, .app-shell:not(.is-admin) h2 { font-family:'Songti SC',SimSun,serif; font-weight:500; }
+.app-shell:not(.is-admin) .brand-mark { background:#a04439; border-radius:3px; box-shadow:inset 0 0 0 3px #a04439,inset 0 0 0 4px #ffffff80; }
+.app-shell:not(.is-admin) .site-nav a { background:transparent; border-radius:0; border-bottom:2px solid transparent; }
+.app-shell:not(.is-admin) .site-nav a:hover,.app-shell:not(.is-admin) .site-nav a.router-link-active { color:var(--green); background:transparent; border-bottom-color:var(--green); }
+.app-shell:not(.is-admin) .hero { padding-top:38px; padding-bottom:28px; }
+.app-shell:not(.is-admin) .hero-copy { background:transparent; }
+.app-shell:not(.is-admin) .hero-art-frame { border-radius:3px; background:var(--green) url('/covers/countryside.jpg') center/cover; min-height:430px; }
+.app-shell:not(.is-admin) .hero-placeholder { background:linear-gradient(135deg,#527a80,#496c52); }
+.app-shell:not(.is-admin) .hero-stamp { color:#a04439; border-color:#a04439; background:#f7f8f4e6; }
+.app-shell:not(.is-admin) .hero h1 { font-size:clamp(42px,5vw,72px); line-height:1.25; }
+.app-shell:not(.is-admin) .issue-label,.app-shell:not(.is-admin) .eyebrow { color:var(--green); }
+.app-shell:not(.is-admin) .text-link { color:var(--green-dark); }
+.app-shell:not(.is-admin) .category-strip { border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:transparent; }
+.app-shell:not(.is-admin) .category-pill { border-radius:2px; background:transparent; }
+.app-shell:not(.is-admin) .category-pill.active,.app-shell:not(.is-admin) .category-pill:hover { color:var(--green-dark); background:#e9efe6; }
+.app-shell:not(.is-admin) .story-grid { gap:30px; }
+.app-shell:not(.is-admin) .story-primary,.app-shell:not(.is-admin) .story-secondary .post-card { background:transparent; border-color:var(--line); border-radius:3px; box-shadow:none; }
+.app-shell:not(.is-admin) .story-primary:hover,.app-shell:not(.is-admin) .post-card:hover { box-shadow:none; transform:translateY(-3px); }
+.app-shell:not(.is-admin) .post-card img { transition:transform .4s ease; }
+.app-shell:not(.is-admin) .post-card:hover img { transform:scale(1.03); }
+.app-shell:not(.is-admin) .tag-section { border-top-color:var(--line); }
+.app-shell:not(.is-admin) .site-footer { border-top-color:var(--line); background:transparent; }
+.app-shell:not(.is-admin) :is(button,input,textarea,a):focus-visible { outline:2px solid #527a80; outline-offset:3px; }
+@media(max-width:760px){.app-shell:not(.is-admin) .hero{padding-top:22px}.app-shell:not(.is-admin) .hero-art-frame{min-height:300px}.app-shell:not(.is-admin) .hero h1{font-size:40px}}

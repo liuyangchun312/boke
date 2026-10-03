@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ArrowLeft, ArrowRight, Check, Copy, Eye, Share2 } from 'lucide-vue-next'
 import { RouterLink, useRoute } from 'vue-router'
 import CommentSection from '../components/CommentSection.vue'
+import ArticleLike from '../components/ArticleLike.vue'
 import RequestState from '../components/RequestState.vue'
 import { usePublicPosts } from '../composables/usePublicPosts'
 import { fetchPost } from '../services/api'
@@ -139,6 +140,7 @@ onBeforeUnmount(() => {
         </aside>
       </section>
 
+      <ArticleLike :key="post.id" :post-id="post.id" />
       <section class="article-signoff container-narrow">
         <div class="author-note">
           <span class="author-note-mark">刘</span>
@@ -151,7 +153,7 @@ onBeforeUnmount(() => {
         </nav>
       </section>
 
-      <CommentSection :post-id="post.id" />
+      <CommentSection :key="post.id" :post-id="post.id" />
       <section class="article-end container-narrow"><RouterLink class="text-link" :to="{ name: 'home' }"><ArrowLeft :size="17" />回到全部文章</RouterLink></section>
     </template>
   </main>

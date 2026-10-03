@@ -1,5 +1,25 @@
 const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
 const TOKEN_KEY = 'liuyangchun_admin_token'
+const VISITOR_KEY = 'liuyangchun_visitor_id'
+let memoryVisitorId
+const createVisitorId = () => globalThis.crypto.randomUUID?.()
+  || Array.from(globalThis.crypto.getRandomValues(new Uint8Array(16)), (byte) => byte.toString(16).padStart(2, '0')).join('')
+
+const getVisitorId = () => {
+  try {
+    const saved = window.localStorage.getItem(VISITOR_KEY)
+    if (/^[A-Za-z0-9_-]{16,128}$/.test(saved || '')) return saved
+  } catch { /* Private browsing may disable storage. */ }
+  memoryVisitorId ||= createVisitorId()
+  try { window.localStorage.setItem(VISITOR_KEY, memoryVisitorId) } catch { /* Keep the identity for this session. */ }
+  return memoryVisitorId
+}
+
+const visitorOptions = (options) => {
+  const headers = new Headers(options.headers)
+  headers.set('X-Visitor-Id', getVisitorId())
+  return { ...options, headers, auth: false }
+}
 
 export class ApiError extends Error {
   constructor(message, status = 0) {
@@ -74,6 +94,19 @@ export const createComment = (postId, comment, options = {}) => request(`/posts/
 })
 export const fetchAdminComments = (options = {}) => request('/admin/comments', { ...options, auth: true })
 export const deleteComment = (id, options = {}) => request(`/admin/comments/${encodeURIComponent(id)}`, { ...options, method: 'DELETE', auth: true })
+export const fetchLikes = (postId, options = {}) => request(`/posts/${encodeURIComponent(postId)}/likes`, visitorOptions(options))
+export const setPostLike = (postId, liked, options = {}) => request(`/posts/${encodeURIComponent(postId)}/likes`, {
+  ...visitorOptions(options), method: 'PUT', body: JSON.stringify({ liked })
+})
+export const moderateComment = (id, status, options = {}) => request(`/admin/comments/${encodeURIComponent(id)}/status`, {
+  ...options, auth: true, method: 'PATCH', body: JSON.stringify({ status })
+})
+export const replyToComment = (id, content, options = {}) => request(`/admin/comments/${encodeURIComponent(id)}/reply`, {
+  ...options, auth: true, method: 'PUT', body: JSON.stringify({ content })
+})
+export const resetPostLikes = (id, options = {}) => request(`/admin/posts/${encodeURIComponent(id)}/likes`, {
+  ...options, auth: true, method: 'DELETE'
+})
 export const fetchAdminPosts = (params = {}, options = {}) => request(`/admin/posts?${listQuery(params)}`, { ...options, auth: true })
 export const fetchAdminPost = (id, options = {}) => request(`/admin/posts/${encodeURIComponent(id)}`, { ...options, auth: true })
 export const fetchCurrentUser = (options = {}) => request('/auth/me', { ...options, auth: true })

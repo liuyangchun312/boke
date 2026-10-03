@@ -90,7 +90,10 @@ retain the Flyway schema-history table with the application tables.
 - `GET /api/posts/slug/{slug}` for an unambiguous slug lookup, including numeric slugs
 - `GET /api/categories`, `GET /api/tags` (published posts only)
 - `GET/POST /api/posts/{id}/comments` (published posts only)
+- `GET/PUT /api/posts/{id}/likes` (published posts only)
 - `GET /api/admin/comments`, `DELETE /api/admin/comments/{id}`
+- `PATCH /api/admin/comments/{id}/status`, `PUT /api/admin/comments/{id}/reply`
+- `DELETE /api/admin/posts/{id}/likes` resets the post's likes
 - `GET /api/admin/posts`, `GET /api/admin/posts/{id}`
 - `POST /api/admin/posts`, `PUT/DELETE /api/admin/posts/{id}`
 - `PATCH /api/admin/posts/{id}/publish`, `/unpublish`
@@ -98,3 +101,21 @@ retain the Flyway schema-history table with the application tables.
 All responses retain `{ success, message, data, timestamp }`. Omitted post
 status defaults to `DRAFT`; omitted slugs remain stable on edits. Post content
 is stored exactly as submitted so Markdown whitespace is preserved.
+
+Like requests require an `X-Visitor-Id` header containing 16-128 letters,
+digits, underscores, or hyphens. The frontend persists a random visitor UUID.
+`GET` returns `data: { likeCount, liked }`; `PUT` accepts `{ "liked": true }`
+or `{ "liked": false }` and returns the same state. Repeated requests are
+idempotent for that visitor and post. These identifiers are anonymous browser
+identities, not authenticated user accounts.
+
+New comments have status `PENDING` and become public after an administrator
+sets `APPROVED`. `HIDDEN` and `PENDING` comments appear only in the admin list.
+The status endpoint accepts `{ "status": "APPROVED" }`, `"HIDDEN"`, or
+`"PENDING"`. The reply endpoint accepts `{ "content": "Reply text" }` with a
+1000-character limit. Replies are trimmed; blank content clears both `reply`
+and `repliedAt`. Public replies follow their comment's visibility.
+
+Post responses include `likeCount` and `commentCount`; only approved comments
+contribute to `commentCount`. Flyway migration V2 preserves existing comments
+as approved and cascades interaction removal when their post is deleted.

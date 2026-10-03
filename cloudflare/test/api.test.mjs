@@ -9,8 +9,10 @@ test('D1 API: authentication, publishing, search, moderation and limits', async 
   const mf = new Miniflare({ modules: true, script: 'export default { fetch() { return new Response("OK") } }', d1Databases: ['DB'] })
   t.after(() => mf.dispose())
   const DB = await mf.getD1Database('DB')
-  const migration = await readFile(new URL('../migrations/0001_blog.sql', import.meta.url), 'utf8')
-  await DB.batch(migration.split(';').filter(s => s.trim()).map(s => DB.prepare(s)))
+  for (const file of ['0001_blog.sql', '0002_interactions.sql']) {
+    const migration = await readFile(new URL(`../migrations/${file}`, import.meta.url), 'utf8')
+    await DB.batch(migration.split(';').filter(s => s.trim()).map(s => DB.prepare(s)))
+  }
   const salt = 'a'.repeat(32)
   const env = { DB, BLOG_ADMIN_USERNAME: 'owner', BLOG_ADMIN_DISPLAY_NAME: 'Owner', BLOG_JWT_SECRET: 'x'.repeat(48),
     BLOG_ADMIN_PASSWORD_HASH: `${ITERATIONS}:${salt}:${await passwordHash('test-password-123', salt)}` }

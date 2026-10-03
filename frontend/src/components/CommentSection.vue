@@ -1,6 +1,6 @@
 <script setup>
 import { onBeforeUnmount, ref, watch } from 'vue'
-import { Check, LoaderCircle, MessageCircle, Send } from 'lucide-vue-next'
+import { Check, CornerDownRight, LoaderCircle, MessageCircle, Send } from 'lucide-vue-next'
 import { createComment, fetchComments } from '../services/api'
 
 const props = defineProps({
@@ -11,13 +11,13 @@ const comments = ref([])
 const loading = ref(true)
 const error = ref('')
 const submitError = ref('')
-const submitted = ref(false)
+const submitted = ref('')
 const submitting = ref(false)
 const author = ref('')
 const content = ref('')
 let controller
 let requestId = 0
-let submittedTimer
+let submitController
 
 const formatCommentDate = (value) => {
   if (!value) return ''
@@ -34,6 +34,11 @@ const load = async () => {
   controller = new AbortController()
   loading.value = true
   error.value = ''
+  comments.value = []
+  submitted.value = ''
+  submitError.value = ''
+  submitController?.abort()
+  submitting.value = false
   try {
     const result = await fetchComments(props.postId, { signal: controller.signal })
     if (current === requestId) comments.value = Array.isArray(result) ? result : []
@@ -45,10 +50,12 @@ const load = async () => {
 }
 
 const submit = async () => {
+  if (submitting.value) return
+  const current = requestId
   const cleanAuthor = author.value.trim()
   const cleanContent = content.value.trim()
   submitError.value = ''
-  submitted.value = false
+  submitted.value = ''
   if (!cleanAuthor || !cleanContent) {
     submitError.value = '请留下称呼和想说的话。'
     return
@@ -58,17 +65,17 @@ const submit = async () => {
     return
   }
   submitting.value = true
+  submitController = new AbortController()
   try {
-    const created = await createComment(props.postId, { author: cleanAuthor, content: cleanContent })
-    comments.value.push(created)
+    const created = await createComment(props.postId, { author: cleanAuthor, content: cleanContent }, { signal: submitController.signal })
+    if (current !== requestId) return
+    if (created.status === 'APPROVED') comments.value.unshift(created)
     content.value = ''
-    submitted.value = true
-    window.clearTimeout(submittedTimer)
-    submittedTimer = window.setTimeout(() => { submitted.value = false }, 3200)
+    submitted.value = created.status === 'APPROVED' ? '留言已发布，谢谢你的分享。' : '留言已提交，审核通过后会显示在这里。'
   } catch (cause) {
-    submitError.value = cause?.message || '留言没有提交成功，请稍后重试。'
+    if (current === requestId && cause?.name !== 'AbortError') submitError.value = cause?.message || '留言没有提交成功，请稍后重试。'
   } finally {
-    submitting.value = false
+    if (current === requestId) submitting.value = false
   }
 }
 
@@ -76,7 +83,7 @@ watch(() => props.postId, load, { immediate: true })
 onBeforeUnmount(() => {
   requestId += 1
   controller?.abort()
-  window.clearTimeout(submittedTimer)
+  submitController?.abort()
 })
 </script>
 
@@ -93,19 +100,19 @@ onBeforeUnmount(() => {
     <div class="comment-layout">
       <form class="comment-form" @submit.prevent="submit">
         <label for="comment-author">怎么称呼你</label>
-        <input id="comment-author" v-model="author" maxlength="40" autocomplete="name" placeholder="你的名字或昵称" />
+        <input id="comment-author" v-model="author" required maxlength="40" autocomplete="name" :disabled="submitting" placeholder="你的名字或昵称" />
         <label for="comment-content">想说的话</label>
-        <textarea id="comment-content" v-model="content" maxlength="1000" rows="5" placeholder="聊聊文章，也可以说说你记忆里的泰和。"></textarea>
+        <textarea id="comment-content" v-model="content" required maxlength="1000" rows="5" :disabled="submitting" placeholder="聊聊文章，也可以说说你记忆里的泰和。"></textarea>
         <div class="comment-form-foot">
-          <p>留言公开可见，请友善交流。</p>
+          <p>{{ content.length }} / 1000</p>
           <button type="submit" :disabled="submitting">
             <LoaderCircle v-if="submitting" class="request-state-spinner" :size="15" />
             <Send v-else :size="15" />
-            {{ submitting ? '正在提交' : '发布留言' }}
+            {{ submitting ? '正在提交' : '提交留言' }}
           </button>
         </div>
         <p v-if="submitError" class="comment-form-message is-error" role="alert">{{ submitError }}</p>
-        <p v-else-if="submitted" class="comment-form-message is-success" role="status"><Check :size="14" />留言已发布，谢谢你认真读到这里。</p>
+        <p v-else-if="submitted" class="comment-form-message is-success" role="status"><Check :size="14" />{{ submitted }}</p>
       </form>
 
       <div class="comment-list" aria-live="polite">
@@ -116,6 +123,7 @@ onBeforeUnmount(() => {
           <div>
             <header><strong>{{ comment.author }}</strong><time :datetime="comment.createdAt">{{ formatCommentDate(comment.createdAt) }}</time></header>
             <p>{{ comment.content }}</p>
+            <div v-if="comment.reply" class="author-reply"><header><strong><CornerDownRight :size="14" />刘杨春 <span>作者</span></strong><time :datetime="comment.repliedAt">{{ formatCommentDate(comment.repliedAt) }}</time></header><p>{{ comment.reply }}</p></div>
           </div>
         </article>
         <div v-if="!loading && !error && !comments.length" class="comment-empty"><MessageCircle :size="21" /><p>这里还很安静。<br />欢迎留下第一则读者手记。</p></div>

@@ -115,7 +115,7 @@ class BlogApplicationTests {
 
         mockMvc.perform(get("/api/posts/" + id + "/comments"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data", hasSize(1)));
+                .andExpect(jsonPath("$.data", hasSize(0)));
         mockMvc.perform(get("/api/admin/comments"))
                 .andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/admin/comments")

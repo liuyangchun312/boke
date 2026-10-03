@@ -28,7 +28,9 @@ export const normalizePost = (post, index = 0) => {
     readTime: `${Math.max(1, Math.ceil(stripMarkdown(content).length / 500))} 分钟`,
     image: post?.coverImage || post?.image || FALLBACK_COVER,
     accent: accents[index % accents.length],
-    viewCount: Number(post?.viewCount || 0)
+    viewCount: Number(post?.viewCount || 0),
+    likeCount: Number(post?.likeCount || 0),
+    commentCount: Number(post?.commentCount || 0)
   }
 }
 

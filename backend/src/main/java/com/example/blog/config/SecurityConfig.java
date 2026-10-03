@@ -36,7 +36,9 @@ public class SecurityConfig {
                         .accessDeniedHandler((request, response, accessDeniedException) -> writeError(response, 403, "Access denied")))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/login", "/api/posts/**", "/api/categories", "/api/tags").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/posts/*/comments").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/posts/**", "/api/categories", "/api/tags").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/posts/*/likes").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

@@ -1,0 +1,2 @@
+# Seed migrations embed Markdown whose line endings must remain stable.
+cloudflare/migrations/*.sql text eol=lf

@@ -18,6 +18,8 @@ public class Post {
     private Instant updatedAt;
     private Instant publishedAt;
     private long viewCount;
+    private long likeCount;
+    private long commentCount;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -45,4 +47,8 @@ public class Post {
     public void setPublishedAt(Instant publishedAt) { this.publishedAt = publishedAt; }
     public long getViewCount() { return viewCount; }
     public void setViewCount(long viewCount) { this.viewCount = viewCount; }
+    public long getLikeCount() { return likeCount; }
+    public void setLikeCount(long likeCount) { this.likeCount = likeCount; }
+    public long getCommentCount() { return commentCount; }
+    public void setCommentCount(long commentCount) { this.commentCount = commentCount; }
 }

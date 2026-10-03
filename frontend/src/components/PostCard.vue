@@ -1,5 +1,5 @@
 <script setup>
-import { ChevronRight, Clock3 } from 'lucide-vue-next'
+import { ChevronRight, Clock3, Heart, MessageCircle } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import { formatDate } from '../utils/blog'
 
@@ -18,7 +18,7 @@ defineProps({
         <div class="story-meta"><span>{{ post.category }}</span><span>{{ formatDate(post.date) }}</span></div>
         <h3>{{ post.title }}</h3>
         <p>{{ post.excerpt }}</p>
-        <div class="story-footer"><span><Clock3 :size="14" />{{ post.readTime }}</span><ChevronRight :size="17" /></div>
+        <div class="story-footer"><span><Clock3 :size="14" />{{ post.readTime }}</span><span class="story-interactions"><span :aria-label="post.likeCount + ' 次点赞'"><Heart :size="13" />{{ post.likeCount }}</span><span :aria-label="post.commentCount + ' 则留言'"><MessageCircle :size="13" />{{ post.commentCount }}</span><ChevronRight :size="17" /></span></div>
       </div>
     </RouterLink>
   </article>

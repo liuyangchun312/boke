@@ -20,7 +20,9 @@ import java.util.Optional;
 public class JdbcPostRepository implements PostRepository {
     private static final String SELECT_POST = """
             SELECT id, title, slug, excerpt, content, category, cover_image, status,
-                   created_at, updated_at, published_at, view_count
+                   created_at, updated_at, published_at, view_count,
+                   (SELECT COUNT(*) FROM post_likes WHERE post_id = posts.id) AS like_count,
+                   (SELECT COUNT(*) FROM comments WHERE post_id = posts.id AND status = 'APPROVED') AS comment_count
             FROM posts
             """;
 
@@ -39,6 +41,8 @@ public class JdbcPostRepository implements PostRepository {
         post.setUpdatedAt(toInstant(rs.getTimestamp("updated_at")));
         post.setPublishedAt(toInstant(rs.getTimestamp("published_at")));
         post.setViewCount(rs.getLong("view_count"));
+        post.setLikeCount(rs.getLong("like_count"));
+        post.setCommentCount(rs.getLong("comment_count"));
         return post;
     };
 

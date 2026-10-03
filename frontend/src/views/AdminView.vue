@@ -1,7 +1,8 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
-import { ArrowUpRight, Edit3, FileText, LayoutDashboard, LogOut, MessageSquare, PenLine, Plus, Send, Trash2, Undo2 } from 'lucide-vue-next'
+import { ArrowUpRight, Edit3, Eye, FileText, Heart, LayoutDashboard, LogOut, MessageSquare, PenLine, Plus, RefreshCw, Search, Send, Trash2, Undo2 } from 'lucide-vue-next'
+import AdminComments from '../components/AdminComments.vue'
 import EditorModal from '../components/EditorModal.vue'
 import RequestState from '../components/RequestState.vue'
 import {
@@ -14,7 +15,10 @@ import {
   fetchCurrentUser,
   getToken,
   loginAdmin,
+  moderateComment,
   publishPost,
+  replyToComment,
+  resetPostLikes,
   setToken,
   unpublishPost,
   updatePost
@@ -33,6 +37,8 @@ const currentUser = ref(null)
 const loginForm = reactive({ username: '', password: '' })
 const statusFilter = ref('ALL')
 const categoryFilter = ref('')
+const postSearch = ref('')
+const replyDirty = ref(false)
 const editorPost = ref(undefined)
 const editorPending = ref(false)
 const editorError = ref('')
@@ -63,15 +69,21 @@ const resetRequests = () => {
 const categories = computed(() => [...new Set(posts.value.map((post) => post.category).filter(Boolean))])
 const filteredPosts = computed(() => posts.value.filter((post) => {
   if (statusFilter.value !== 'ALL' && post.status !== statusFilter.value) return false
-  return !categoryFilter.value || post.category === categoryFilter.value
+  if (categoryFilter.value && post.category !== categoryFilter.value) return false
+  const query = postSearch.value.trim().toLocaleLowerCase()
+  return !query || [post.title, post.category, ...post.tags].join(' ').toLocaleLowerCase().includes(query)
 }))
 const stats = computed(() => [
   { label: '全部文章', value: posts.value.length, suffix: '篇' },
   { label: '已发布', value: posts.value.filter((post) => post.status === 'PUBLISHED').length, suffix: '篇' },
-  { label: '草稿', value: posts.value.filter((post) => post.status === 'DRAFT').length, suffix: '篇' },
-  { label: '读者留言', value: comments.value.length, suffix: '则' }
+  { label: '累计点赞', value: posts.value.reduce((total, post) => total + post.likeCount, 0), suffix: '次' },
+  { label: '待审核留言', value: comments.value.filter((comment) => comment.status === 'PENDING').length, suffix: '则' }
 ])
-const postTitles = computed(() => new Map(posts.value.map((post) => [Number(post.id), post.title])))
+const approvedCounts = computed(() => {
+  const counts = new Map()
+  for (const comment of comments.value) if (comment.status === 'APPROVED') counts.set(Number(comment.postId), (counts.get(Number(comment.postId)) || 0) + 1)
+  return counts
+})
 const editorOpen = computed(() => editorPost.value !== undefined)
 
 const announce = (message) => {
@@ -81,6 +93,14 @@ const announce = (message) => {
 }
 
 const isAuthFailure = (error) => error?.status === 401 || error?.status === 403
+const handleInteractionAuthFailure = () => {
+  if (replyDirty.value) {
+    announce('登录已过期。当前回复仍保留，请复制后重新登录。')
+  } else {
+    logout(false)
+    authError.value = '登录已过期，请重新登录。'
+  }
+}
 
 const loadPosts = async () => {
   const epoch = ++listEpoch
@@ -164,6 +184,7 @@ const login = async () => {
 }
 
 function logout(showMessage = true) {
+  if (showMessage && replyDirty.value && !window.confirm('回复尚未保存，确定退出吗？')) return
   resetRequests()
   setToken(null)
   currentUser.value = null
@@ -172,6 +193,7 @@ function logout(showMessage = true) {
   activeSection.value = 'posts'
   editorPost.value = undefined
   editorDirty.value = false
+  replyDirty.value = false
   authPending.value = false
   listLoading.value = false
   editorPending.value = false
@@ -318,23 +340,62 @@ const removeReaderComment = async (comment) => {
     announce('留言已删除')
   } catch (error) {
     if (!mounted || epoch !== mutationEpoch || error?.name === 'AbortError') return
-    if (isAuthFailure(error)) logout(false)
-    else listError.value = error?.message || '删除留言失败。'
+    if (isAuthFailure(error)) handleInteractionAuthFailure()
+    else announce(error?.message || '删除留言失败。')
   } finally {
     if (mounted && epoch === mutationEpoch) rowPending.value = null
   }
 }
 
-const formatCommentDate = (value) => value ? String(value).slice(0, 16).replace('T', ' ') : '日期未注明'
+const mutateInteraction = async (key, action, onSuccess, message) => {
+  if (rowPending.value) return
+  const epoch = ++mutationEpoch
+  mutationController.abort()
+  mutationController = new AbortController()
+  rowPending.value = key
+  listError.value = ''
+  try {
+    const result = await action({ signal: mutationController.signal })
+    if (!mounted || epoch !== mutationEpoch) return
+    onSuccess(result)
+    announce(message)
+  } catch (error) {
+    if (!mounted || epoch !== mutationEpoch || error?.name === 'AbortError') return
+    if (isAuthFailure(error)) handleInteractionAuthFailure()
+    else announce(error?.message || '操作失败，请稍后重试。')
+  } finally {
+    if (mounted && epoch === mutationEpoch) rowPending.value = null
+  }
+}
+
+const replaceComment = (comment) => { comments.value = comments.value.map((item) => item.id === comment.id ? comment : item) }
+const reviewComment = (comment, status) => mutateInteraction('review-' + comment.id,
+  (options) => moderateComment(comment.id, status, options), replaceComment,
+  status === 'APPROVED' ? '留言已审核通过' : '留言已隐藏')
+const saveReply = (comment, content, done) => mutateInteraction('reply-' + comment.id,
+  (options) => replyToComment(comment.id, content, options),
+  (result) => { replaceComment(result); done(); replyDirty.value = false }, content ? '回复已保存' : '回复已移除')
+const clearLikes = (post) => {
+  if (!window.confirm('确定清空《' + post.title + '》的全部点赞吗？此操作无法撤销。')) return
+  return mutateInteraction('likes-' + post.id, (options) => resetPostLikes(post.id, options),
+    () => { post.likeCount = 0 }, '点赞已清空')
+}
+const switchSection = (section) => {
+  if (section === activeSection.value) return
+  if (replyDirty.value && !window.confirm('回复尚未保存，确定切换页面吗？')) return
+  replyDirty.value = false
+  activeSection.value = section
+}
 
 const onBeforeUnload = (event) => {
-  if (!editorDirty.value && !editorPending.value) return
+  if (!editorDirty.value && !editorPending.value && !replyDirty.value) return
   event.preventDefault()
   event.returnValue = ''
 }
 
 onBeforeRouteLeave(() => {
   if (editorPending.value) return window.confirm('保存请求仍在进行，确定离开编辑工作台吗？')
+  if (replyDirty.value) return window.confirm('回复尚未保存，确定离开编辑工作台吗？')
   return !editorDirty.value || window.confirm('尚有未保存的修改，确定离开编辑工作台吗？')
 })
 onMounted(() => {
@@ -371,8 +432,8 @@ onBeforeUnmount(() => {
         <div class="admin-logo"><span class="brand-mark">刘</span><span>写作台</span></div>
         <div class="admin-sidebar-label">WORKSPACE</div>
         <nav class="admin-nav" aria-label="编辑工作台导航">
-          <button type="button" :class="{ active: activeSection === 'posts' }" @click="activeSection = 'posts'"><LayoutDashboard :size="17" />文章管理 <span>{{ posts.length }}</span></button>
-          <button type="button" :class="{ active: activeSection === 'comments' }" @click="activeSection = 'comments'"><MessageSquare :size="17" />留言管理 <span>{{ comments.length }}</span></button>
+          <button type="button" :class="{ active: activeSection === 'posts' }" @click="switchSection('posts')"><LayoutDashboard :size="17" />文章管理 <span>{{ posts.length }}</span></button>
+          <button type="button" :class="{ active: activeSection === 'comments' }" @click="switchSection('comments')"><MessageSquare :size="17" />留言管理 <span>{{ comments.length }}</span></button>
         </nav>
         <div class="sidebar-bottom"><div class="mini-profile"><span class="avatar">刘</span><div><strong>{{ currentUser?.displayName || currentUser?.username }}</strong><small>作者 / Admin</small></div></div><button class="logout-button" type="button" title="退出登录" aria-label="退出登录" @click="logout()"><LogOut :size="17" /></button></div>
       </aside>
@@ -385,6 +446,7 @@ onBeforeUnmount(() => {
           <div class="panel-heading">
             <div><p class="eyebrow">CONTENT / CONTENTS</p><h2>文章存档 <span>{{ filteredPosts.length }}</span></h2></div>
             <div class="panel-actions">
+              <label class="admin-search"><Search :size="16" /><input v-model="postSearch" type="search" placeholder="搜索文章" aria-label="搜索文章" /></label>
               <select v-model="statusFilter" aria-label="按发布状态筛选"><option value="ALL">全部状态</option><option value="PUBLISHED">已发布</option><option value="DRAFT">草稿</option></select>
               <select v-model="categoryFilter" aria-label="按分类筛选"><option value="">全部分类</option><option v-for="category in categories" :key="category" :value="category">{{ category }}</option></select>
             </div>
@@ -395,13 +457,14 @@ onBeforeUnmount(() => {
             <div class="article-table-head"><span>文章</span><span>分类</span><span>状态</span><span>更新于</span><span></span></div>
             <div class="article-table">
               <div v-for="post in filteredPosts" :key="post.id" class="article-row">
-                <div class="row-title"><div class="row-thumb"><img :src="post.image" :alt="post.title" loading="lazy" /></div><div><strong>{{ post.title }}</strong><small>{{ post.tags.map((tag) => '#' + tag).join('　') || '暂无标签' }}</small></div></div>
+                <div class="row-title"><div class="row-thumb"><img :src="post.image" :alt="post.title" loading="lazy" /></div><div><strong>{{ post.title }}</strong><small class="row-interactions"><span :title="post.viewCount + ' 次浏览'"><Eye :size="12" />{{ post.viewCount }}</span><span :title="post.likeCount + ' 次点赞'"><Heart :size="12" />{{ post.likeCount }}</span><span :title="(approvedCounts.get(Number(post.id)) || 0) + ' 则公开留言'"><MessageSquare :size="12" />{{ approvedCounts.get(Number(post.id)) || 0 }}</span></small></div></div>
                 <span class="row-category">{{ post.category }}</span>
                 <span class="status-dot" :class="{ draft: post.status === 'DRAFT' }"><i></i>{{ post.status === 'PUBLISHED' ? '已发布' : '草稿' }}</span>
                 <span class="row-date">{{ formatDate(post.updatedAt || post.createdAt) }}</span>
                 <div class="row-actions">
                   <button class="icon-button" type="button" title="编辑文章" :aria-label="'编辑《' + post.title + '》'" :disabled="Boolean(rowPending)" @click="edit(post)"><Edit3 :size="16" /></button>
                   <button class="icon-button" type="button" :title="post.status === 'PUBLISHED' ? '取消发布' : '发布文章'" :aria-label="(post.status === 'PUBLISHED' ? '取消发布《' : '发布《') + post.title + '》'" :disabled="Boolean(rowPending)" @click="togglePublication(post)"><Undo2 v-if="post.status === 'PUBLISHED'" :size="16" /><Send v-else :size="16" /></button>
+                  <button class="icon-button" type="button" title="清空点赞" :aria-label="'清空《' + post.title + '》的点赞'" :disabled="Boolean(rowPending) || !post.likeCount" @click="clearLikes(post)"><RefreshCw :size="16" /></button>
                   <button class="icon-button danger" type="button" title="删除文章" :aria-label="'删除《' + post.title + '》'" :disabled="Boolean(rowPending)" @click="remove(post)"><Trash2 :size="16" /></button>
                 </div>
               </div>
@@ -414,18 +477,7 @@ onBeforeUnmount(() => {
           <div class="panel-heading"><div><p class="eyebrow">READER NOTES / COMMENTS</p><h2>读者留言 <span>{{ comments.length }}</span></h2></div></div>
           <RequestState v-if="listLoading" state="loading" light />
           <RequestState v-else-if="listError" state="error" light :message="listError" @retry="loadPosts" />
-          <div v-else-if="comments.length" class="admin-comment-list">
-            <article v-for="comment in comments" :key="comment.id" class="admin-comment-row">
-              <div class="comment-avatar">{{ String(comment.author || '读').slice(0, 1) }}</div>
-              <div class="admin-comment-copy">
-                <header><strong>{{ comment.author }}</strong><time>{{ formatCommentDate(comment.createdAt) }}</time></header>
-                <p>{{ comment.content }}</p>
-                <small>来自《{{ postTitles.get(Number(comment.postId)) || '已删除的文章' }}》</small>
-              </div>
-              <button class="icon-button danger" type="button" title="删除留言" :aria-label="'删除' + comment.author + '的留言'" :disabled="Boolean(rowPending)" @click="removeReaderComment(comment)"><Trash2 :size="16" /></button>
-            </article>
-          </div>
-          <div v-else class="admin-empty"><MessageSquare :size="23" /><p>还没有读者留言</p></div>
+          <AdminComments v-else :comments="comments" :posts="posts" :pending="Boolean(rowPending)" @moderate="reviewComment" @reply="saveReply" @delete="removeReaderComment" @dirty="replyDirty = $event" />
         </section>
       </section>
     </section>
