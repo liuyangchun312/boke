@@ -1,10 +1,14 @@
 /* Rural editorial theme: visual-only, preserves Vue data and interactions. */
 .app-shell:not(.is-admin) { --ink:#293b37; --green:#496c52; --green-dark:#34533d; --paper:#f7f8f4; --line:#dce2da; background:var(--paper); color:var(--ink); }
 .app-shell:not(.is-admin) .site-header { background:transparent; border-bottom:1px solid var(--line); box-shadow:none; }
-.app-shell:not(.is-admin) .brand-title, .app-shell:not(.is-admin) h1, .app-shell:not(.is-admin) h2 { font-family:'Songti SC',SimSun,serif; font-weight:500; }
+.app-shell:not(.is-admin) .brand-copy strong, .app-shell:not(.is-admin) h1, .app-shell:not(.is-admin) h2 { color:var(--ink); font-family:'Songti SC',SimSun,serif; font-weight:500; }
+.app-shell:not(.is-admin) .brand-copy small { color:#68756b; }
+.app-shell:not(.is-admin) .header-actions .icon-button { color:var(--ink); }
+.app-shell:not(.is-admin) :is(h1,h2) em { color:#a04439; }
+.app-shell:not(.is-admin) .hero-intro, .app-shell:not(.is-admin) .letter-copy > p:last-child { color:#5c6c60; }
 .app-shell:not(.is-admin) .brand-mark { background:#a04439; border-radius:3px; box-shadow:inset 0 0 0 3px #a04439,inset 0 0 0 4px #ffffff80; }
-.app-shell:not(.is-admin) .site-nav a { background:transparent; border-radius:0; border-bottom:2px solid transparent; }
-.app-shell:not(.is-admin) .site-nav a:hover,.app-shell:not(.is-admin) .site-nav a.router-link-active { color:var(--green); background:transparent; border-bottom-color:var(--green); }
+.app-shell:not(.is-admin) .main-nav .nav-link { color:#617069; background:transparent; border-radius:0; border-bottom:2px solid transparent; }
+.app-shell:not(.is-admin) .main-nav .nav-link:hover,.app-shell:not(.is-admin) .main-nav .nav-link.router-link-active { color:var(--green-dark); background:transparent; border-bottom-color:var(--green); }
 .app-shell:not(.is-admin) .hero { padding-top:38px; padding-bottom:28px; }
 .app-shell:not(.is-admin) .hero-copy { background:transparent; }
 .app-shell:not(.is-admin) .hero-art-frame { border-radius:3px; background:var(--green) url('/covers/countryside.jpg') center/cover; min-height:430px; }
@@ -24,4 +28,4 @@
 .app-shell:not(.is-admin) .tag-section { border-top-color:var(--line); }
 .app-shell:not(.is-admin) .site-footer { border-top-color:var(--line); background:transparent; }
 .app-shell:not(.is-admin) :is(button,input,textarea,a):focus-visible { outline:2px solid #527a80; outline-offset:3px; }
-@media(max-width:760px){.app-shell:not(.is-admin) .hero{padding-top:22px}.app-shell:not(.is-admin) .hero-art-frame{min-height:300px}.app-shell:not(.is-admin) .hero h1{font-size:40px}}
+@media(max-width:760px){.app-shell:not(.is-admin) .hero{padding-top:22px}.app-shell:not(.is-admin) .hero-art-frame{min-height:300px}.app-shell:not(.is-admin) .hero h1{font-size:40px}.app-shell:not(.is-admin) .main-nav{background:var(--paper);border-color:var(--line)}}
