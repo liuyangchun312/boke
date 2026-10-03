@@ -13,12 +13,12 @@
 | 框架预设 | `None` |
 | 根目录（Root directory） | `cloudflare` |
 | 构建命令（Build command） | `npm run build` |
-| 构建输出目录（Build output directory） | `../frontend/dist` |
+| 构建输出目录（Build output directory） | `dist` |
 | 生产分支 | `main` |
 
 在构建环境变量中设置 `VITE_API_BASE_URL=/api`、`VITE_SITE_URL=https://你的项目.pages.dev` 和 `NODE_VERSION=22`，使用 Pages V2 或更新的构建系统，并保留默认依赖安装。
 
-仓库根目录没有 `package.json`，在那里执行 `npm run build` 会报 `ENOENT`。`cloudflare/package.json` 会安装并构建相邻的 `frontend`，Pages 同时发现 `cloudflare/functions` 中的 API。根目录应填 `cloudflare`，仅使用 `frontend` 会遗漏后端 Functions。
+仓库根目录没有 `package.json`，在那里执行 `npm run build` 会报 `ENOENT`。`cloudflare/package.json` 会安装相邻的 `frontend`，通过 Vite 的 `--outDir` 将产物写入 `cloudflare/dist`，Pages 同时发现 `cloudflare/functions` 中的 API。根目录应填 `cloudflare`，仅使用 `frontend` 会遗漏后端 Functions。输出目录使用根目录内的 `dist`，带 `..` 的路径会被 Pages 拒绝。
 
 首次部署前，按下文第 1、2 步完成 Wrangler 授权、创建 D1 和远端数据库迁移，将真实数据库 ID 填入 `cloudflare/wrangler.toml` 后提交并推送。全零 ID 是占位符，不能用于部署；Wrangler 配置中的 D1 绑定是部署配置来源。
 

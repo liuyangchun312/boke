@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "npm --prefix ../frontend ci && npm --prefix ../frontend run build",
-    "dev": "wrangler pages dev ../frontend/dist --ip 127.0.0.1 --port 8788",
-    "deploy": "wrangler pages deploy ../frontend/dist",
+    "build": "npm --prefix ../frontend ci && npm --prefix ../frontend run build -- --outDir ../cloudflare/dist --emptyOutDir",
+    "dev": "wrangler pages dev dist --ip 127.0.0.1 --port 8788",
+    "deploy": "wrangler pages deploy dist",
     "db:local": "wrangler d1 migrations apply DB --local",
     "db:remote": "wrangler d1 migrations apply DB --remote",
     "admin:hash": "node scripts/admin-hash.mjs",
