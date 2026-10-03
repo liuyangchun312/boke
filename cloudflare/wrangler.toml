@@ -1,0 +1,9 @@
+name = "boke"
+compatibility_date = "2026-09-01"
+pages_build_output_dir = "../frontend/dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "liuyangchun-blog-20261003"
+database_id = "e173a144-7569-4ce2-8a94-f91a7dc9c3d3"
+migrations_dir = "migrations"

@@ -1,0 +1,5 @@
+# Copy to .dev.vars for local use only. Generate secrets with npm run admin:hash.
+BLOG_ADMIN_USERNAME="owner"
+BLOG_ADMIN_DISPLAY_NAME="Owner"
+BLOG_ADMIN_PASSWORD_HASH="REPLACE_WITH_GENERATED_HASH"
+BLOG_JWT_SECRET="REPLACE_WITH_GENERATED_SECRET"

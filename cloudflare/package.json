@@ -1,0 +1,16 @@
+{
+  "name": "blog-cloudflare",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "npm --prefix ../frontend ci && npm --prefix ../frontend run build",
+    "dev": "wrangler pages dev ../frontend/dist --ip 127.0.0.1 --port 8788",
+    "deploy": "wrangler pages deploy ../frontend/dist",
+    "db:local": "wrangler d1 migrations apply DB --local",
+    "db:remote": "wrangler d1 migrations apply DB --remote",
+    "admin:hash": "node scripts/admin-hash.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": { "jose": "^6.1.0" },
+  "devDependencies": { "wrangler": "^4.0.0", "miniflare": "^4.0.0" }
+}
