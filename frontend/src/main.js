@@ -1,17 +1,14 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
+import { reveal } from './directives/reveal'
 import './styles.css'
 import './website-polish.css'
 import './rural-theme.css'
 import './interactions.css'
-import '@fontsource/zcool-xiaowei/400.css'
 import '@fontsource/noto-serif-sc/400.css'
 import '@fontsource/noto-serif-sc/500.css'
-import '@fontsource/noto-serif-sc/600.css'
 import '@fontsource/noto-sans-sc/400.css'
-import '@fontsource/noto-sans-sc/500.css'
 import '@fontsource/noto-sans-sc/600.css'
-import '@fontsource/noto-sans-sc/700.css'
 
-createApp(App).use(router).mount('#app')
+createApp(App).directive('reveal', reveal).use(router).mount('#app')

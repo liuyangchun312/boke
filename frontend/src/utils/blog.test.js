@@ -42,6 +42,28 @@ test('normalizePost keeps raw Markdown while deriving display fields', () => {
   assert.match(post.readTime, /^\d+ 分钟$/)
 })
 
+test('legacy seed illustrations resolve to a credited local photograph', () => {
+  const post = normalizePost({ ...posts[0], coverImage: '/covers/taihe-kuaige.svg' })
+  assert.match(post.image, /^\/photos\/.+\.webp$/)
+  assert.ok(post.imageCredit?.author)
+  assert.match(post.imageCredit?.source, /^https:\/\/commons\.wikimedia\.org\//)
+  assert.match(post.imageSrcset, /640w/)
+})
+
+test('custom covers are preserved and are never given an unrelated photo credit', () => {
+  const post = normalizePost({ ...posts[0], coverImage: 'https://example.com/my-photo.jpg' })
+  assert.equal(post.image, 'https://example.com/my-photo.jpg')
+  assert.equal(post.imageCredit, null)
+  assert.equal(post.imageSrcset, '')
+})
+
+test('photographic cover and credit survive repeated normalization during filtering', () => {
+  const post = normalizePost({ ...posts[0], coverImage: '/covers/taihe-shukou.svg' })
+  const filtered = filterPosts([post], { q: '晚风' })[0]
+  assert.equal(filtered.image, post.image)
+  assert.deepEqual(filtered.imageCredit, post.imageCredit)
+})
+
 test('filterPosts combines category, tag and text query', () => {
   assert.deepEqual(filterPosts(posts, { category: '泰和风物', tag: '赣江', q: '晚风' }).map((post) => post.id), [1])
   assert.deepEqual(filterPosts(posts, { q: '不存在' }), [])

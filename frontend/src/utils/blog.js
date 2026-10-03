@@ -1,4 +1,6 @@
-export const FALLBACK_COVER = '/covers/taihe-kuaige.svg'
+import { photographs, resolvePhotograph } from '../data/photographs.js'
+
+export const FALLBACK_COVER = photographs.fields.image
 
 const accents = ['coral', 'ink', 'sage', 'ochre']
 
@@ -15,6 +17,8 @@ export const normalizePost = (post, index = 0) => {
   const content = String(post?.content || '')
   const rawDate = post?.publishedAt || post?.updatedAt || post?.createdAt || ''
   const date = rawDate ? String(rawDate).slice(0, 10) : ''
+  const cover = post?.coverImage || post?.image || ''
+  const photograph = resolvePhotograph(cover, post?.slug)
 
   return {
     ...post,
@@ -26,7 +30,9 @@ export const normalizePost = (post, index = 0) => {
     tags: Array.isArray(post?.tags) ? post.tags.filter(Boolean) : [],
     date,
     readTime: `${Math.max(1, Math.ceil(stripMarkdown(content).length / 500))} 分钟`,
-    image: post?.coverImage || post?.image || FALLBACK_COVER,
+    image: photograph?.image || cover || FALLBACK_COVER,
+    imageSrcset: photograph?.srcset || '',
+    imageCredit: photograph || null,
     accent: accents[index % accents.length],
     viewCount: Number(post?.viewCount || 0),
     likeCount: Number(post?.likeCount || 0),

@@ -1,12 +1,13 @@
 <script setup>
 import { computed } from 'vue'
-import { ArrowUpRight, CalendarDays, Search } from 'lucide-vue-next'
-import { RouterLink, useRoute } from 'vue-router'
+import { ArrowUpRight, CalendarDays, Search, X } from 'lucide-vue-next'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import RequestState from '../components/RequestState.vue'
 import { usePublicPosts } from '../composables/usePublicPosts'
 import { buildArchiveGroups, filterPosts, formatDate } from '../utils/blog'
 
 const route = useRoute()
+const router = useRouter()
 const { posts, categories, tags, loading, error, load } = usePublicPosts()
 const filters = computed(() => ({
   category: String(route.query.category || ''),
@@ -23,6 +24,7 @@ const withFilter = (key, value) => ({
   ...(filters.value.q ? { q: filters.value.q } : {}),
   [key]: value || undefined
 })
+const updateTag = (event) => router.push({ name: 'archives', query: withFilter('tag', event.target.value) })
 </script>
 
 <template>
@@ -39,11 +41,12 @@ const withFilter = (key, value) => ({
         <RouterLink :class="{ active: !filters.category }" :to="{ name: 'archives', query: withFilter('category', '') }">全部</RouterLink>
         <RouterLink v-for="category in categories" :key="category" :class="{ active: filters.category === category }" :to="{ name: 'archives', query: withFilter('category', category) }">{{ category }}</RouterLink>
       </div>
-      <div v-if="tags.length" class="filter-line">
-        <span>主题</span>
-        <RouterLink :class="{ active: !filters.tag }" :to="{ name: 'archives', query: withFilter('tag', '') }">全部</RouterLink>
-        <RouterLink v-for="tag in tags" :key="tag" :class="{ active: filters.tag === tag }" :to="{ name: 'archives', query: withFilter('tag', tag) }">#{{ tag }}</RouterLink>
+      <div v-if="tags.length" class="archive-topic-filter">
+        <label for="archive-topic">主题</label>
+        <select id="archive-topic" :value="filters.tag" aria-label="按主题筛选档案" @change="updateTag"><option value="">所有主题</option><option v-for="tag in tags" :key="tag" :value="tag">{{ tag }}</option></select>
+        <RouterLink v-if="hasFilters" class="archive-reset" :to="{ name: 'archives' }"><X :size="13" />清除筛选</RouterLink>
       </div>
+      <p v-if="filters.q" class="archive-search-query">搜索：{{ filters.q }}</p>
     </section>
 
     <section class="archive-index container-wide">
@@ -59,6 +62,7 @@ const withFilter = (key, value) => ({
               <div class="archive-rows">
                 <RouterLink v-for="post in month.posts" :key="post.id" class="archive-row" :to="{ name: 'article', params: { slug: post.slug } }">
                   <span class="archive-date">{{ formatDate(post.date) }}</span>
+                  <img class="archive-thumbnail" :src="post.image" :srcset="post.imageSrcset || undefined" sizes="64px" :alt="post.imageCredit?.caption || ''" width="64" height="64" loading="lazy" />
                   <div><strong>{{ post.title }}</strong><small>{{ post.category }}<template v-if="post.tags.length"> · {{ post.tags.map((tag) => '#' + tag).join(' ') }}</template></small></div>
                   <ArrowUpRight :size="17" />
                 </RouterLink>

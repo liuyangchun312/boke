@@ -1,13 +1,14 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ArrowLeft, ArrowRight, Check, Copy, Eye, Share2 } from 'lucide-vue-next'
 import { RouterLink, useRoute } from 'vue-router'
 import CommentSection from '../components/CommentSection.vue'
 import ArticleLike from '../components/ArticleLike.vue'
+import PhotoCredit from '../components/PhotoCredit.vue'
 import RequestState from '../components/RequestState.vue'
 import { usePublicPosts } from '../composables/usePublicPosts'
 import { fetchPost } from '../services/api'
-import { formatDate, normalizePost } from '../utils/blog'
+import { FALLBACK_COVER, formatDate, normalizePost } from '../utils/blog'
 import { renderMarkdownDocument } from '../utils/markdown'
 import { applyArticleMeta, applySiteMeta } from '../utils/seo'
 
@@ -27,6 +28,11 @@ const markdownDocument = computed(() => renderMarkdownDocument(post.value?.conte
 const currentIndex = computed(() => posts.value.findIndex((item) => item.slug === post.value?.slug))
 const newerPost = computed(() => currentIndex.value > 0 ? posts.value[currentIndex.value - 1] : null)
 const olderPost = computed(() => currentIndex.value >= 0 ? posts.value[currentIndex.value + 1] : null)
+const recoverImage = (event) => {
+  if (event.target.getAttribute('src') === FALLBACK_COVER) return
+  event.target.removeAttribute('srcset')
+  event.target.src = FALLBACK_COVER
+}
 
 const load = async () => {
   const current = ++requestId
@@ -36,6 +42,7 @@ const load = async () => {
   error.value = ''
   missing.value = false
   post.value = null
+  readingProgress.value = 0
   applySiteMeta({ title: '正在读取文章 · 刘杨春', path: route.fullPath, noindex: true })
   try {
     const result = await fetchPost(String(route.params.slug), { signal: controller.signal })
@@ -52,7 +59,11 @@ const load = async () => {
       applySiteMeta({ title: '文章暂时无法读取 · 刘杨春', path: route.fullPath, noindex: true })
     }
   } finally {
-    if (current === requestId) loading.value = false
+    if (current === requestId) {
+      loading.value = false
+      await nextTick()
+      if (current === requestId) updateReadingProgress()
+    }
   }
 }
 
@@ -103,7 +114,7 @@ onBeforeUnmount(() => {
 
 <template>
   <main id="main-content" class="article-page">
-    <div class="reading-progress" aria-hidden="true"><span :style="{ width: readingProgress + '%' }"></span></div>
+    <div v-if="post && !loading" class="reading-progress" aria-hidden="true"><span :style="{ width: readingProgress + '%' }"></span></div>
     <section v-if="loading" class="article-state container-narrow"><RequestState state="loading" light /></section>
     <section v-else-if="error" class="article-state container-narrow"><RequestState state="error" :message="error" light @retry="load" /></section>
     <section v-else-if="missing" class="article-state article-missing container-narrow">
@@ -123,7 +134,7 @@ onBeforeUnmount(() => {
         <p v-if="post.excerpt" class="article-deck">{{ post.excerpt }}</p>
         <div class="article-byline"><span class="avatar">刘</span><span>刘杨春 · 泰和手记</span><span class="byline-dot"></span><span>更新于 {{ formatDate(post.updatedAt || post.date) }}</span></div>
       </section>
-      <figure v-if="post.image" class="article-hero container-wide"><img :src="post.image" :alt="post.title" /><figcaption><span>刘杨春 / 泰和乡土手记</span><span>{{ post.category }}</span></figcaption></figure>
+      <figure v-if="post.image" class="article-hero container-wide"><img :src="post.image" :srcset="post.imageSrcset || undefined" sizes="(max-width: 760px) 100vw, 90vw" :alt="post.imageCredit?.caption || post.title" width="1280" height="960" fetchpriority="high" @error="recoverImage" /><figcaption><PhotoCredit v-if="post.imageCredit" :photo="post.imageCredit" /><span v-else>刘杨春 / 泰和乡土手记</span><span>{{ post.category }}</span></figcaption></figure>
       <section class="article-body container-narrow">
         <article class="article-copy markdown-body" v-html="markdownDocument.html"></article>
         <aside class="article-aside">

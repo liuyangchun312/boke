@@ -1,6 +1,8 @@
 <script setup>
-import { ArrowLeft, ArrowRight, BookOpen, MapPin, NotebookPen } from 'lucide-vue-next'
+import { ArrowLeft, ArrowRight, BookOpen, ChevronDown, MapPin, NotebookPen } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
+import PhotoCredit from '../components/PhotoCredit.vue'
+import { photographs } from '../data/photographs'
 </script>
 
 <template>
@@ -8,13 +10,14 @@ import { RouterLink } from 'vue-router'
     <section class="about-hero container-wide">
       <div>
         <p class="eyebrow">ABOUT / 关于</p>
-        <h1>刘杨春的<br /><em>泰和乡土手记。</em></h1>
+        <h1>刘杨春。<br /><em>一个家乡的记录者。</em></h1>
         <p class="about-hero-intro">不是地方百科，也不追赶热门目的地。这里只想从一个长期生活者的视角，把家乡写得准确、具体，也写得有人情。</p>
       </div>
-      <div class="about-seal"><span>TAIHE</span><strong>刘</strong><span>FIELD NOTES</span></div>
     </section>
 
-    <section class="about-copy container-narrow">
+    <figure v-reveal class="about-landscape container-wide"><img :src="photographs.river.image" :srcset="photographs.river.srcset" sizes="90vw" :alt="photographs.river.caption" width="1280" height="853" /><figcaption><PhotoCredit :photo="photographs.river" /></figcaption></figure>
+
+    <section v-reveal class="about-copy container-narrow">
       <aside class="about-sidebar">
         <div class="about-portrait" aria-hidden="true"><span>刘</span><small>LIU YANGCHUN</small></div>
         <dl>
@@ -45,6 +48,7 @@ import { RouterLink } from 'vue-router'
 
         <RouterLink class="text-link" :to="{ name: 'home' }"><ArrowLeft :size="17" />回到文章索引</RouterLink>
         <RouterLink class="about-archive-link" :to="{ name: 'archives' }">按时间翻阅全部手记<ArrowRight :size="17" /></RouterLink>
+        <details id="photographs" class="photo-sources"><summary><span>影像出处</span><small>PHOTOGRAPHY</small><ChevronDown :size="16" /></summary><div v-for="photo in photographs" :key="photo.image" class="photo-source"><span>{{ photo.caption }}</span><PhotoCredit :photo="photo" compact /></div></details>
       </div>
     </section>
   </main>

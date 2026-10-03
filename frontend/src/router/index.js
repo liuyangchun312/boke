@@ -15,8 +15,9 @@ const router = createRouter({
   routes,
   scrollBehavior(to, from, savedPosition) {
     if (savedPosition) return savedPosition
-    if (to.hash) return { el: to.hash, top: 24 }
-    if (to.name === 'home' && from.name === 'home' && to.path === from.path) return { el: '#story-index', top: 24 }
+    const top = (document.querySelector('.site-header')?.offsetHeight || 84) + 24
+    if (to.hash) return { el: to.hash, top }
+    if (to.name === 'home' && (from.name === 'home' || to.query.category || to.query.tag || to.query.q)) return { el: '#story-index', top }
     return { top: 0 }
   }
 })
